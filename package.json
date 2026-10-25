@@ -1,0 +1,11 @@
+{
+  "name": "data-science-dashboard",
+  "private": true,
+  "scripts": {
+    "dev:private": "npm --prefix private run dev",
+    "dev:public": "npm --prefix public run dev",
+    "build:private": "npm --prefix private run build",
+    "build:public": "npm --prefix public run build",
+    "install:all": "npm --prefix private install && npm --prefix public install"
+  }
+}
