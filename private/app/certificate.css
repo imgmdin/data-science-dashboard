@@ -1,0 +1,20 @@
+/* Certificate artwork. Fixed A4-landscape paper; scaled to fit by <CertificateFrame>. */
+
+.dss-paper{width:297mm;height:210mm;position:relative;overflow:hidden;background:#fff;color:#220965;transform-origin:top left;font-family:Arial,Helvetica,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.dss-paper.filled{background:#23086c;color:#fff}.dss-paper .ornament{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.dss-header{position:absolute;z-index:2;top:20mm;left:17mm;display:flex;gap:10mm;align-items:center}.dss-logo{width:28mm;height:28mm;object-fit:contain}.dss-logo.society{clip-path:circle(35%);transform:scale(1.4)}.dss-logo.university{clip-path:circle(49%)}.dss-paper.filled .dss-logo.society{clip-path:circle(35%);transform:scale(1.4)}.dss-logo.university{clip-path:polygon(44% 1%,56% 1%,56% 5%,63% 7%,66% 3%,76% 9%,74% 14%,80% 19%,85% 16%,92% 26%,87% 29%,91% 36%,97% 35%,100% 47%,94% 49%,94% 57%,99% 59%,95% 70%,89% 68%,85% 76%,90% 80%,82% 88%,77% 84%,71% 90%,73% 95%,61% 99%,59% 94%,51% 95%,49% 100%,37% 97%,38% 92%,30% 88%,26% 93%,16% 86%,20% 81%,14% 74%,8% 77%,3% 65%,8% 63%,6% 55%,1% 54%,1% 42%,6% 42%,9% 34%,4% 31%,10% 21%,15% 24%,21% 18%,17% 13%,28% 6%,31% 11%,39% 7%,38% 2%)}
+.dss-content{position:absolute;z-index:2;left:17mm;top:70mm;width:198mm}.dss-title{font-size:28pt;line-height:1.18;font-weight:600;letter-spacing:.015em;margin:0 0 8mm;white-space:pre-line;text-transform:uppercase}
+.dss-presented{font-size:10pt;line-height:1.35;margin:0 0 3mm;font-weight:400}.dss-recipient{font-size:24pt;line-height:1.2;font-weight:500;margin:0 0 7mm;overflow-wrap:break-word}
+.dss-statement{font-size:11pt;line-height:1.45;font-weight:400;margin:0 0 3mm;white-space:pre-line}.dss-event{font-size:16pt;line-height:1.3;font-weight:600;margin:0;overflow-wrap:break-word}.dss-badge{font-size:10pt;font-weight:500;letter-spacing:.12em;display:table;border:1px solid currentColor;padding:2mm 7mm;margin:5mm auto 0}.dss-badge:empty{display:none}
+.dss-footer{position:absolute;z-index:1;left:0;right:0;bottom:0;height:50mm;background:#fff;color:#16121b}.dss-paper:not(.filled) .dss-footer{background:transparent}
+.dss-signatures{position:absolute;z-index:3;left:24mm;right:24mm;bottom:13mm;display:flex;justify-content:space-between;gap:25mm;color:#17121d}
+.dss-signature{width:100mm;text-align:center;flex:none}.dss-sign-space{height:24mm;display:flex;align-items:center;justify-content:center}.dss-sign-space img{max-width:85mm;max-height:22mm;object-fit:contain}
+.dss-sign-rule{height:0;border-top:.3mm solid #242029;margin-bottom:2mm}.dss-sign-name{font-size:10pt;line-height:1.3;font-weight:500;margin:0 0 1mm;white-space:nowrap}.dss-sign-role{font-size:9pt;line-height:1.3;font-weight:400;margin:0}
+.layout-centered .dss-header{left:24mm;right:24mm;justify-content:space-between}.layout-centered .dss-content{left:25mm;width:247mm;top:64mm;text-align:center}.layout-centered .dss-title{margin-bottom:8mm}.layout-centered .dss-recipient{margin-bottom:7mm}.layout-centered .dss-statement{max-width:225mm;margin-left:auto;margin-right:auto}
+.layout-workshop .dss-content{width:208mm;top:66mm}.layout-workshop .dss-header{top:20mm}
+.layout-service .dss-title{position:absolute;left:164mm;top:-59mm;width:105mm;font-size:26pt;line-height:1.2}.layout-service .dss-content{top:80mm;width:184mm}.layout-service .dss-header{top:18mm}
+.layout-research .dss-header{left:auto;right:18mm;top:16mm;gap:7mm}.layout-research .dss-logo{width:25mm;height:25mm}.layout-research .dss-content{top:53mm;width:220mm}.layout-research .dss-title{margin-bottom:11mm}
+.layout-mentor .dss-content{top:62mm}.layout-partner .dss-content{top:52mm}.layout-partner .dss-title{margin-bottom:11mm}.layout-partner .dss-badge{display:none}
+.layout-cabinet .dss-content{top:63mm}.layout-cabinet .dss-header{top:24mm}
+
+.dss-stage{width:100%;overflow:hidden;position:relative}.dss-paper{transform-origin:top left}

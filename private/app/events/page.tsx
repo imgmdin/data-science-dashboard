@@ -1,296 +1,182 @@
-
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { eventStatus, formatWhen, type Phase } from "@/lib/event-status";
+import type { EventRecord } from "@/lib/event-types";
+import { EventEditor } from "./editor";
 
-type SocietyEvent = {
-  id: number;
-  title: string;
-  category: string;
-  date: string;
-  location: string;
-  capacity: number;
-  status: "Upcoming" | "Registration Open" | "Completed";
+const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? "http://localhost:3001";
+
+const PHASE_STYLE: Record<Phase, string> = {
+  open: "bg-emerald-50 text-emerald-800",
+  scheduled: "bg-amber-50 text-amber-900",
+  ongoing: "bg-brand-100 text-brand-900",
+  concluded: "bg-slate-100 text-slate-700",
 };
 
-const initialEvents: SocietyEvent[] = [
-  {
-    id: 1,
-    title: "Introduction to Machine Learning",
-    category: "Workshop",
-    date: "2026-10-28",
-    location: "Computer Lab 1",
-    capacity: 60,
-    status: "Registration Open",
-  },
-  {
-    id: 2,
-    title: "Data Visualization with Python",
-    category: "Training",
-    date: "2026-11-02",
-    location: "Seminar Hall",
-    capacity: 80,
-    status: "Upcoming",
-  },
-  {
-    id: 3,
-    title: "Data Science Project Showcase",
-    category: "Competition",
-    date: "2026-11-08",
-    location: "Main Auditorium",
-    capacity: 120,
-    status: "Upcoming",
-  },
-  {
-    id: 4,
-    title: "AI & Society Seminar",
-    category: "Seminar",
-    date: "2026-10-15",
-    location: "Conference Room",
-    capacity: 50,
-    status: "Completed",
-  },
-];
+type Filter = "all" | "upcoming" | "ongoing" | "concluded";
 
 export default function EventsPage() {
-  const [events, setEvents] = useState(initialEvents);
+  const [rows, setRows] = useState<EventRecord[] | null>(null);
+  const [error, setError] = useState("");
+  const [editing, setEditing] = useState<EventRecord | "new" | null>(null);
+  const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [showForm, setShowForm] = useState(false);
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Workshop");
-  const [date, setDate] = useState("");
-  const [location, setLocation] = useState("");
-  const [capacity, setCapacity] = useState("50");
 
-  const filteredEvents = useMemo(() => {
-    return events.filter((event) => {
-      const matchesSearch =
-        event.title.toLowerCase().includes(search.toLowerCase()) ||
-        event.category.toLowerCase().includes(search.toLowerCase());
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/events");
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error);
+      setRows(body);
+      setError("");
+    } catch (e) {
+      setError((e as Error).message || "Could not load events.");
+      setRows([]);
+    }
+  }, []);
 
-      const matchesStatus =
-        statusFilter === "All" || event.status === statusFilter;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
 
-      return matchesSearch && matchesStatus;
-    });
-  }, [events, search, statusFilter]);
+  const items = useMemo(
+    () =>
+      (rows ?? []).map((e) => ({ e, s: eventStatus(e) })).filter(({ e, s }) => {
+        const matchesFilter =
+          filter === "all" ||
+          (filter === "upcoming" && (s.phase === "open" || s.phase === "scheduled")) ||
+          s.phase === filter;
+        return matchesFilter && e.title.toLowerCase().includes(search.toLowerCase());
+      }),
+    [rows, filter, search],
+  );
 
-  const upcomingCount = events.filter(
-    (event) => event.status !== "Completed"
-  ).length;
-
-  function addEvent(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    setEvents((current) => [
-      {
-        id: Date.now(),
-        title: title.trim(),
-        category,
-        date,
-        location: location.trim(),
-        capacity: Number(capacity),
-        status: "Upcoming",
-      },
-      ...current,
-    ]);
-
-    setTitle("");
-    setCategory("Workshop");
-    setDate("");
-    setLocation("");
-    setCapacity("50");
-    setShowForm(false);
-  }
-
-  function formatDate(dateString: string) {
-    return new Date(`${dateString}T12:00:00`).toLocaleDateString(
-      "en-GB",
-      { day: "numeric", month: "short", year: "numeric" }
+  if (editing) {
+    return (
+      <main className="mx-auto max-w-6xl">
+        <EventEditor
+          initial={editing === "new" ? null : editing}
+          onClose={(changed) => {
+            setEditing(null);
+            if (changed) load();
+          }}
+        />
+      </main>
     );
   }
 
-  return (
-    <main className="min-h-screen bg-slate-50 p-5 text-slate-900 md:p-9">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-sm text-slate-500">
-            Society Management / Events
-          </p>
-          <h1 className="mt-2 text-3xl font-bold">Events & Activities</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Plan workshops, manage activities, and organize society events.
-          </p>
-        </div>
+  const stats = (rows ?? []).reduce(
+    (a, e) => {
+      const p = eventStatus(e).phase;
+      if (p === "open" || p === "scheduled") a.upcoming++;
+      if (p === "ongoing") a.ongoing++;
+      if (p === "concluded") a.done++;
+      a.regs += e.registered;
+      return a;
+    },
+    { upcoming: 0, ongoing: 0, done: 0, regs: 0 },
+  );
 
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-        >
-          + Create Event
-        </button>
+  return (
+    <main className="mx-auto max-w-6xl">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-brand-950">Events</h1>
+          <p className="mt-1 text-slate-600">Publish events to the Society Portal and see who has registered.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <a href={PUBLIC_URL} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:border-brand-300">
+            View portal
+          </a>
+          <button onClick={() => setEditing("new")} className="rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">
+            New event
+          </button>
+        </div>
       </header>
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-3">
+      {error ? (
+        <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </p>
+      ) : null}
+
+      <section aria-label="Summary" className="mb-6 grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-white lg:grid-cols-4 lg:divide-x lg:divide-slate-200">
         {[
-          { label: "Total Events", value: events.length },
-          { label: "Upcoming / Open", value: upcomingCount },
-          {
-            label: "Completed",
-            value: events.filter((event) => event.status === "Completed").length,
-          },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-2xl border border-slate-200 bg-white p-5"
-          >
-            <p className="text-sm text-slate-500">{stat.label}</p>
-            <p className="mt-3 text-3xl font-bold">{stat.value}</p>
+          ["Upcoming", stats.upcoming],
+          ["Happening now", stats.ongoing],
+          ["Concluded", stats.done],
+          ["Total registrations", stats.regs],
+        ].map(([label, value], i) => (
+          <div key={label} className={`p-5 ${i >= 2 ? "border-t border-slate-200 lg:border-t-0" : ""} ${i % 2 === 1 ? "border-l border-slate-200 lg:border-l-0" : ""}`}>
+            <p className="text-sm text-slate-600">{label}</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-brand-950">{value}</p>
           </div>
         ))}
       </section>
 
-      {showForm && (
-        <form
-          onSubmit={addEvent}
-          className="mb-6 rounded-2xl border border-slate-200 bg-white p-6"
-        >
-          <h2 className="mb-4 text-lg font-bold">Create an event</h2>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <input
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Event title"
-              className="rounded-lg border border-slate-300 px-3 py-3"
-            />
-
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-3"
-            >
-              <option>Workshop</option>
-              <option>Training</option>
-              <option>Seminar</option>
-              <option>Competition</option>
-              <option>Social Activity</option>
-            </select>
-
-            <input
-              required
-              type="date"
-              min="2026-01-01"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-3"
-            />
-
-            <input
-              required
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Venue / location"
-              className="rounded-lg border border-slate-300 px-3 py-3"
-            />
-
-            <input
-              required
-              type="number"
-              min="1"
-              value={capacity}
-              onChange={(e) => setCapacity(e.target.value)}
-              placeholder="Maximum participants"
-              className="rounded-lg border border-slate-300 px-3 py-3"
-            />
-          </div>
-
-          <div className="mt-4 flex gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          aria-label="Search events"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search events"
+          className="w-full max-w-xs rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+        />
+        <div role="group" aria-label="Filter by status" className="flex gap-1.5">
+          {(["all", "upcoming", "ongoing", "concluded"] as Filter[]).map((f) => (
             <button
-              type="submit"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-white"
+              key={f}
+              onClick={() => setFilter(f)}
+              aria-pressed={filter === f}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium capitalize transition-colors ${filter === f ? "bg-brand-700 text-white" : "bg-white text-slate-700 ring-1 ring-slate-300 hover:ring-brand-300"}`}
             >
-              Save Event
+              {f}
             </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="rounded-lg border px-4 py-2"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 md:p-6">
-        <div className="mb-5 flex flex-col gap-3 md:flex-row">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search events or categories..."
-            className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500"
-          />
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 px-4 py-3"
-          >
-            <option>All</option>
-            <option>Upcoming</option>
-            <option>Registration Open</option>
-            <option>Completed</option>
-          </select>
-        </div>
-
-        <div className="space-y-4">
-          {filteredEvents.map((event) => (
-            <article
-              key={event.id}
-              className="rounded-xl border border-slate-200 p-5 transition hover:border-blue-200"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                    {event.category}
-                  </span>
-                  <h2 className="mt-2 text-lg font-bold">{event.title}</h2>
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-500">
-                    <span>📅 {formatDate(event.date)}</span>
-                    <span>📍 {event.location}</span>
-                    <span>👥 Capacity: {event.capacity}</span>
-                  </div>
-                </div>
-
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${
-                    event.status === "Completed"
-                      ? "bg-slate-100 text-slate-600"
-                      : event.status === "Registration Open"
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "bg-blue-50 text-blue-700"
-                  }`}
-                >
-                  {event.status}
-                </span>
-              </div>
-            </article>
           ))}
-
-          {filteredEvents.length === 0 && (
-            <p className="py-10 text-center text-slate-500">
-              No events match your search.
-            </p>
-          )}
         </div>
+      </div>
 
-        <p className="mt-5 text-xs text-slate-400">
-          Demo events only · Changes are temporary and not stored in a database.
-        </p>
-      </section>
+      {rows === null ? (
+        <p className="text-slate-600">Loading…</p>
+      ) : items.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-brand-300 bg-white p-10 text-center">
+          <h2 className="text-lg font-semibold text-brand-950">{rows.length === 0 ? "No events yet" : "No events match"}</h2>
+          <p className="mx-auto mt-1 max-w-md text-slate-600">
+            {rows.length === 0 ? "Create your first event, then publish it so members can register." : "Try a different filter or search."}
+          </p>
+          {rows.length === 0 ? (
+            <button onClick={() => setEditing("new")} className="mt-5 rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">
+              Create an event
+            </button>
+          ) : null}
+        </div>
+      ) : (
+        <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          {items.map(({ e, s }) => (
+            <li key={e.id}>
+              <button onClick={() => setEditing(e)} className="flex w-full flex-wrap items-center gap-x-5 gap-y-2 px-5 py-4 text-left transition-colors hover:bg-brand-50">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-brand-950">{e.title}</span>
+                    {!e.published ? <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">Draft</span> : null}
+                  </div>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    {e.category} · {formatWhen(e.startAt, e.endAt)}
+                    {e.venue ? ` · ${e.venue}` : ""}
+                  </p>
+                </div>
+                <span className="text-sm tabular-nums text-slate-700">
+                  {e.registered}
+                  {e.capacity ? ` / ${e.capacity}` : ""} registered
+                </span>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${PHASE_STYLE[s.phase]}`}>{s.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

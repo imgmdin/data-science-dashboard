@@ -1,26 +1,37 @@
 @import "tailwindcss";
+@import "./certificate.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* Brand scale taken from the certificate artwork (#23086c deep purple). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-brand-50: #f6f4ff;
+  --color-brand-100: #ece8ff;
+  --color-brand-200: #d9d2fb;
+  --color-brand-300: #b5a8ef;
+  --color-brand-400: #8f7ddf;
+  --color-brand-500: #7357cc;
+  --color-brand-600: #5a35b0;
+  --color-brand-700: #43228c;
+  --color-brand-800: #2f1470;
+  --color-brand-900: #23086c;
+  --color-brand-950: #150544;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: #f7f6fb;
+  color: #1b1530;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
