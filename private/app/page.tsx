@@ -1,227 +1,128 @@
-
 "use client";
 
-import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { eventStatus, formatWhen, type Phase } from "@/lib/event-status";
 
-import { useState } from "react";
+type Overview = {
+  members: { active: number; pending: number; cabinet: number; total: number };
+  events: { upcoming: number; ongoing: number; concluded: number; drafts: number };
+  registrations: { registered: number; attended: number };
+  certificates: { published: number; downloads: number };
+  upcoming: { slug: string; title: string; category: string; startAt: string; endAt: string; capacity: number | null; registered: number }[];
+};
 
-const menuItems = [
-  "Overview",
-  "Members",
-  "Events & Activities",
-  "Attendance",
-  "Certificates",
-  "Forms",
+const actions = [
+  { label: "Manage members", href: "/members" },
+  { label: "Create an event", href: "/events" },
+  { label: "Record attendance", href: "/attendance" },
+  { label: "Publish a certificate", href: "/certificates" },
 ];
 
-const stats = [
-  { label: "Total Members", value: "248", note: "+12 this month", icon: "👥" },
-  { label: "Upcoming Events", value: "06", note: "Next event in 3 days", icon: "📅" },
-  { label: "Attendance Rate", value: "86%", note: "Across recent events", icon: "✓" },
-  { label: "Certificates", value: "124", note: "Issued to participants", icon: "🏆" },
-];
-
-const events = [
-  { name: "Introduction to Machine Learning", date: "28 Oct 2026", status: "Upcoming" },
-  { name: "Data Visualization Workshop", date: "02 Nov 2026", status: "Registration Open" },
-  { name: "Data Science Project Showcase", date: "08 Nov 2026", status: "Planning" },
-];
+const PHASE_STYLE: Record<Phase, string> = {
+  open: "bg-emerald-50 text-emerald-800",
+  scheduled: "bg-amber-50 text-amber-900",
+  ongoing: "bg-brand-100 text-brand-900",
+  concluded: "bg-slate-100 text-slate-700",
+};
 
 export default function Home() {
-  const [activePage, setActivePage] = useState("Overview");
+  const [data, setData] = useState<Overview | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/overview")
+      .then(async (r) => {
+        const b = await r.json();
+        if (!r.ok) throw new Error(b.error);
+        setData(b);
+      })
+      .catch((e) => setError(e.message || "Could not load the overview."));
+  }, []);
+
+  const rate = data && data.registrations.registered ? Math.round((data.registrations.attended / data.registrations.registered) * 100) : null;
+  const stats = [
+    { label: "Active members", value: data?.members.active, note: data ? `${data.members.cabinet} on cabinet · ${data.members.pending} pending` : "" },
+    { label: "Upcoming events", value: data?.events.upcoming, note: data ? `${data.events.ongoing} happening now · ${data.events.drafts} draft${data.events.drafts === 1 ? "" : "s"}` : "" },
+    { label: "Registrations", value: data?.registrations.registered, note: data ? (rate === null ? "No registrations yet" : `${rate}% have checked in`) : "" },
+    { label: "Certificates downloaded", value: data?.certificates.downloads, note: data ? `${data.certificates.published} published` : "" },
+  ];
 
   return (
-    <main className="min-h-screen bg-violet-50 text-slate-900 md:flex">
-      <aside className="w-full bg-slate-950 p-5 text-white md:min-h-screen md:w-64">
-        
-        <div className="mb-9 flex items-center gap-3">
-          <Image
-  src="/DSS_Logo.png"
-  alt="Data Science Society Logo"
-  width={64}
-  height={64}
-  className="rounded-xl object-contain"
-/>
-        <div>
-          <div className="text-xl font-bold">DataSphere</div>
-          <div className="mt-1 text-xs text-violet-200">
-            Data Science Society
-          </div>
-        </div>
-      </div>
+    <main className="mx-auto max-w-6xl">
+      <header className="mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight text-brand-950">Overview</h1>
+        <p className="mt-1 text-slate-600">Live figures from your members, events and certificates.</p>
+      </header>
 
-
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">
-          Workspace
+      {error ? (
+        <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
         </p>
+      ) : null}
 
-       
-<nav className="flex flex-wrap gap-2 md:flex-col">
-  {menuItems.map((item) => {
-    const routes: Record<string, string> = {
-      Overview: "/",
-      Members: "/members",
-      "Events & Activities": "/events",
-      Attendance: "/attendance",
-    };
-
-    return (
-      <button
-        key={item}
-        onClick={() => {
-          const route = routes[item];
-
-          if (route) {
-            window.location.href = route;
-          } else {
-            setActivePage(item);
-          }
-        }}
-        className={`rounded-lg px-4 py-3 text-left text-sm transition ${
-          activePage === item
-            ? "bg-blue-600 text-white"
-            : "text-slate-300 hover:bg-slate-800"
-        }`}
-      >
-        {item}
-      </button>
-    );
-  })}
-</nav>
-
-
-        <div className="mt-10 rounded-xl border border-slate-800 p-4">
-          <p className="font-medium">Society workspace</p>
-          <p className="mt-2 text-xs leading-5 text-slate-400">
-            Manage your community, activities, and achievements in one place.
-          </p>
-        </div>
-      </aside>
-
-      <section className="min-w-0 flex-1 p-5 md:p-9">
-        <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm text-slate-500">Data Science Society / Workspace</p>
-            <h1 className="mt-2 text-3xl font-bold">{activePage}</h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Welcome back! Here&apos;s your society at a glance.
-            </p>
+      <section aria-label="Key figures" className="mb-8 grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-white lg:grid-cols-4 lg:divide-x lg:divide-slate-200">
+        {stats.map((s, i) => (
+          <div key={s.label} className={`p-5 ${i >= 2 ? "border-t border-slate-200 lg:border-t-0" : ""} ${i % 2 === 1 ? "border-l border-slate-200 lg:border-l-0" : ""}`}>
+            <p className="text-sm text-slate-600">{s.label}</p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums text-brand-950">{s.value ?? "—"}</p>
+            <p className="mt-1 text-xs text-slate-600">{s.note || " "}</p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              aria-label="Notifications"
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3"
-            >
-              🔔
-            </button>
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-700">
-              DS
-            </div>
-          </div>
-        </header>
-
-        {activePage === "Overview" ? (
-          <>
-            <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                >
-                  <div className="flex items-center justify-between
-                  ">
-                    <p className="text-sm text-slate-500">{stat.label}</p>
-                    <span className="text-xl">{stat.icon}</span>
-                  </div>
-                  <p className="mt-4 text-3xl font-bold">{stat.value}</p>
-                  <p className="mt-2 text-xs text-emerald-600">{stat.note}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid gap-6 xl:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 xl:col-span-2">
-                <div className="mb-6 flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-bold">Upcoming Events</h2>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Keep track of society activities
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setActivePage("Events & Activities")}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                  >
-                    View all →
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {events.map((event) => (
-                    <div
-                      key={event.name}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 p-4"
-                    >
-                      <div>
-                        <p className="font-semibold">{event.name}</p>
-                        <p className="mt-1 text-sm text-slate-500">{event.date}</p>
-                      </div>
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-                        {event.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                <h2 className="text-lg font-bold">Quick Actions</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Jump into a workspace
-                </p>
-
-                <div className="mt-5 space-y-3">
-                  {[
-                    ["＋", "Manage Members", "Members"],
-                    ["＋", "Create an Event", "Events & Activities"],
-                    ["✓", "Record Attendance", "Attendance"],
-                    ["✧", "Manage Certificates", "Certificates"],
-                    ["▤", "Manage Forms", "Forms"],
-                  ].map(([icon, label, page]) => (
-                    <button
-                      key={page}
-                      onClick={() => setActivePage(page)}
-                      className="flex w-full items-center gap-3 rounded-xl border border-slate-200 p-3 text-left text-sm font-medium hover:border-blue-300 hover:bg-blue-50"
-                    >
-                      <span className="text-lg text-blue-600">{icon}</span>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8">
-            <h2 className="text-xl font-bold">{activePage}</h2>
-            <p className="mt-2 text-slate-500">
-              This workspace is ready for its next UI module. Database
-              integration will be added separately.
-            </p>
-            <button
-              onClick={() => setActivePage("Overview")}
-              className="mt-5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Back to Overview
-            </button>
-          </div>
-        )}
-
-        <footer className="mt-8 text-center text-xs text-slate-400">
-          DataSphere · Data Science Society · Dashboard Preview
-        </footer>
+        ))}
       </section>
+
+      <div className="grid gap-6 xl:grid-cols-3">
+        <section className="rounded-xl border border-slate-200 bg-white p-6 xl:col-span-2">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-brand-950">Upcoming and ongoing events</h2>
+            <Link href="/events" className="text-sm font-medium text-brand-700 hover:text-brand-900">
+              View all
+            </Link>
+          </div>
+          {data === null ? (
+            <p className="text-sm text-slate-600">Loading…</p>
+          ) : data.upcoming.length === 0 ? (
+            <p className="text-sm text-slate-600">
+              No published events coming up.{" "}
+              <Link href="/events" className="font-medium text-brand-700 hover:text-brand-900">
+                Create one
+              </Link>
+            </p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {data.upcoming.map((e) => {
+                const s = eventStatus({ ...e, registrationDeadline: null });
+                return (
+                  <li key={e.slug} className="flex flex-wrap items-center justify-between gap-3 py-3.5 first:pt-0 last:pb-0">
+                    <div>
+                      <p className="font-medium">{e.title}</p>
+                      <p className="text-sm text-slate-600">
+                        {formatWhen(e.startAt, e.endAt)} · {e.registered}
+                        {e.capacity ? ` / ${e.capacity}` : ""} registered
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${PHASE_STYLE[s.phase]}`}>{s.label}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-brand-950">Quick actions</h2>
+          <ul className="space-y-2">
+            {actions.map((a) => (
+              <li key={a.href}>
+                <Link href={a.href} className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3 text-sm font-medium transition-colors hover:border-brand-300 hover:bg-brand-50">
+                  {a.label}
+                  <span aria-hidden="true" className="text-brand-600">→</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
     </main>
   );
 }
