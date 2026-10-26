@@ -48,6 +48,7 @@ export function parseEventInput(body: unknown): EventInput | string {
   if (typeof b.registrationDeadline === "string" && b.registrationDeadline) {
     const d = new Date(b.registrationDeadline);
     if (Number.isNaN(d.getTime())) return "Registration deadline is not a valid date.";
+    if (d > startAt) return "Registration must close before the event starts.";
     deadline = d.toISOString();
   }
   let capacity: number | null = null;

@@ -1,19 +1,11 @@
 import { createEvent, listEvents, parseEventInput } from "@/lib/events";
+import { guard } from "@/lib/http";
 
-export async function GET() {
-  try {
-    return Response.json(await listEvents());
-  } catch (e) {
-    return Response.json({ error: (e as Error).message }, { status: 500 });
-  }
-}
+export const GET = () => guard(async () => Response.json(await listEvents()));
 
-export async function POST(req: Request) {
-  const input = parseEventInput(await req.json().catch(() => null));
-  if (typeof input === "string") return Response.json({ error: input }, { status: 400 });
-  try {
+export const POST = (req: Request) =>
+  guard(async () => {
+    const input = parseEventInput(await req.json().catch(() => null));
+    if (typeof input === "string") return Response.json({ error: input }, { status: 400 });
     return Response.json(await createEvent(input), { status: 201 });
-  } catch (e) {
-    return Response.json({ error: (e as Error).message }, { status: 500 });
-  }
-}
+  });

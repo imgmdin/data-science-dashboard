@@ -23,6 +23,7 @@ function isActive(pathname: string, href: string) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  if (pathname === "/login") return <>{children}</>;
 
   return (
     <div className="min-h-screen md:flex">

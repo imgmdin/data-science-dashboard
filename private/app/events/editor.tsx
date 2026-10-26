@@ -132,6 +132,7 @@ export function EventEditor({ initial, onClose }: { initial: EventRecord | null;
     if (!initial || !confirm("Remove this registration?")) return;
     const res = await fetch(`/api/events/${initial.id}/registrations?rid=${id}`, { method: "DELETE" });
     if (res.ok) setRegs((r) => r?.filter((x) => x.id !== id) ?? null);
+    else setError("Could not remove the registration.");
   }
 
   return (

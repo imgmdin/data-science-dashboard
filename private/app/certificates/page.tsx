@@ -6,7 +6,7 @@ import { getTemplate } from "@/lib/certificate/templates";
 import type { CertificateRecord } from "@/lib/certificates";
 import { CertificateEditor } from "./editor";
 
-const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? "http://localhost:3001";
+import { PUBLIC_URL } from "../brand";
 
 type Settings = { heading: string; intro: string };
 
@@ -48,11 +48,16 @@ export default function CertificatesPage() {
   }
 
   async function togglePublish(c: CertificateRecord) {
-    await fetch(`/api/certificates/${c.id}`, {
+    const res = await fetch(`/api/certificates/${c.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...c, published: !c.published }),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? "Could not change the published state.");
+      return;
+    }
     load();
   }
 
@@ -78,9 +83,11 @@ export default function CertificatesPage() {
           <p className="mt-1 text-slate-600">Design certificates here, publish them, and members download their own from the public page.</p>
         </div>
         <div className="flex items-center gap-3">
-          <a href={PUBLIC_URL} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:border-brand-300">
-            View public page
-          </a>
+          {PUBLIC_URL ? (
+            <a href={PUBLIC_URL} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:border-brand-300">
+              View public page
+            </a>
+          ) : null}
           <button onClick={() => setEditing("new")} className="rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-800">
             New certificate
           </button>
@@ -121,7 +128,7 @@ export default function CertificatesPage() {
                 <p className="mt-0.5 text-sm text-slate-600">
                   {getTemplate(c.templateId).name} · {c.downloadCount} download{c.downloadCount === 1 ? "" : "s"}
                 </p>
-                {c.published ? (
+                {c.published && PUBLIC_URL ? (
                   <a href={`${PUBLIC_URL}/c/${c.slug}`} target="_blank" rel="noreferrer" className="mt-1 inline-block text-sm font-medium text-brand-700 hover:text-brand-900">
                     {PUBLIC_URL.replace(/^https?:\/\//, "")}/c/{c.slug}
                   </a>

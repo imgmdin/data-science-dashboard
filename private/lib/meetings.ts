@@ -48,12 +48,15 @@ export async function getMeeting(id: string): Promise<MeetingDetail | null> {
 
 /** Starts a meeting with every active cabinet member on the register, all marked Absent until recorded. */
 export async function startMeeting(title: string, quorum: number): Promise<string> {
-  const q = sql();
-  const rows = await q`INSERT INTO meetings (title, quorum) VALUES (${title}, ${quorum}) RETURNING id`;
-  const id = rows[0].id as string;
-  await q`INSERT INTO meeting_attendance (meeting_id, member_id)
-          SELECT ${id}::uuid, id FROM members WHERE is_cabinet AND status <> 'Inactive'`;
-  return id;
+  // One statement, so a failure cannot leave a meeting without its register.
+  const rows = await sql()`
+    WITH m AS (INSERT INTO meetings (title, quorum) VALUES (${title}, ${quorum}) RETURNING id),
+    a AS (
+      INSERT INTO meeting_attendance (meeting_id, member_id)
+      SELECT m.id, mem.id FROM m CROSS JOIN members mem WHERE mem.is_cabinet AND mem.status <> 'Inactive'
+    )
+    SELECT id FROM m`;
+  return rows[0].id as string;
 }
 
 export async function setAttendance(meetingId: string, memberId: string, status: AttendanceStatus): Promise<boolean> {

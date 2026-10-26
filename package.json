@@ -2,10 +2,14 @@
   "name": "data-science-dashboard",
   "private": true,
   "scripts": {
+    "dev": "node scripts/run-all.mjs dev",
+    "start": "node scripts/run-all.mjs start",
+    "build": "npm run build:private && npm run build:public",
     "dev:private": "npm --prefix private run dev",
     "dev:public": "npm --prefix public run dev",
     "build:private": "npm --prefix private run build",
     "build:public": "npm --prefix public run build",
-    "install:all": "npm --prefix private install && npm --prefix public install"
+    "install:all": "npm --prefix private install && npm --prefix public install",
+    "db:migrate": "npm --prefix private run db:migrate"
   }
 }

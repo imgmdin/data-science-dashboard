@@ -5,7 +5,7 @@ import { eventStatus, formatWhen, type Phase } from "@/lib/event-status";
 import type { EventRecord } from "@/lib/event-types";
 import { EventEditor } from "./editor";
 
-const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? "http://localhost:3001";
+import { PUBLIC_URL } from "../brand";
 
 const PHASE_STYLE: Record<Phase, string> = {
   open: "bg-emerald-50 text-emerald-800",
@@ -87,9 +87,11 @@ export default function EventsPage() {
           <p className="mt-1 text-slate-600">Publish events to the Society Portal and see who has registered.</p>
         </div>
         <div className="flex items-center gap-3">
-          <a href={PUBLIC_URL} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:border-brand-300">
-            View portal
-          </a>
+          {PUBLIC_URL ? (
+            <a href={PUBLIC_URL} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 hover:border-brand-300">
+              View portal
+            </a>
+          ) : null}
           <button onClick={() => setEditing("new")} className="rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-800">
             New event
           </button>

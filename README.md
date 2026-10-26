@@ -44,5 +44,19 @@ type their name and download a PDF or PNG (rendered in the browser). Each
 download increments a counter shown in the dashboard.
 
 `private/lib/certificate/` and `public/lib/certificate/` are copies of the same
-renderer; keep them in sync when changing a template. The dashboard API has no
-authentication yet.
+renderer; keep them in sync when changing a template.
+## Protecting the dashboard
+
+Set `DASHBOARD_PASSWORD` on the **private** project (Vercel → Settings → Environment
+Variables) and redeploy. Every page and `/api/*` route then requires signing in at
+`/login`. With it unset the dashboard is open, which is fine for local development but
+means anyone with the URL can read registrations and change data. Changing the password
+signs everyone out.
+
+## Environment variables
+
+| Variable | Project | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | both | Neon connection string |
+| `NEXT_PUBLIC_PUBLIC_SITE_URL` | private | Public site address, used for dashboard links and the check-in QR code. Build-time: redeploy after changing it. |
+| `DASHBOARD_PASSWORD` | private | Enables the sign-in gate |

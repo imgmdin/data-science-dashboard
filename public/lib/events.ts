@@ -76,7 +76,7 @@ export async function register(slug: string, p: { name: string; email: string; d
     INSERT INTO registrations (event_id, name, email, department)
     SELECT e.id, ${p.name}, ${p.email}, ${p.department} FROM events e
     WHERE e.slug = ${slug} AND e.published
-      AND now() < COALESCE(e.registration_deadline, e.start_at)
+      AND now() < LEAST(COALESCE(e.registration_deadline, e.start_at), e.start_at)
       AND (e.capacity IS NULL OR (SELECT count(*) FROM registrations r WHERE r.event_id = e.id) < e.capacity)
     ON CONFLICT (event_id, lower(email)) DO NOTHING
     RETURNING id`;

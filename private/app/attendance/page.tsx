@@ -7,7 +7,7 @@ import type { EventRecord, Registration } from "@/lib/event-types";
 import type { Member } from "@/lib/member-types";
 import { ATTENDANCE_STATUSES, type AttendanceStatus, type Meeting, type MeetingDetail } from "@/lib/meeting-types";
 
-const PUBLIC_URL = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? "http://localhost:3001";
+import { PUBLIC_URL } from "../brand";
 
 const inputCls =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";
@@ -339,7 +339,7 @@ function EventsTab() {
     );
   }
 
-  const checkInUrl = event ? `${PUBLIC_URL}/events/${event.slug}/check-in` : "";
+  const checkInUrl = event && PUBLIC_URL ? `${PUBLIC_URL}/events/${event.slug}/check-in` : "";
   const stats = [
     ["Registered", regs.length],
     ["Checked in", attended],
@@ -380,10 +380,18 @@ function EventsTab() {
           <section className={panel}>
             <h2 className="text-lg font-semibold text-brand-950">Self check-in QR</h2>
             <p className="mt-1 text-sm text-slate-600">Show this at the door. Attendees scan it and confirm with the email they registered with.</p>
-            <div className="mt-4 flex justify-center rounded-lg bg-slate-50 p-4">
-              <QRCodeSVG value={checkInUrl} size={200} level="H" marginSize={2} title={`Check-in QR code for ${event?.title}`} />
-            </div>
-            <p className="mt-3 break-all text-center text-xs text-slate-600">{checkInUrl}</p>
+            {checkInUrl ? (
+              <>
+                <div className="mt-4 flex justify-center rounded-lg bg-slate-50 p-4">
+                  <QRCodeSVG value={checkInUrl} size={200} level="H" marginSize={2} title={`Check-in QR code for ${event?.title}`} />
+                </div>
+                <p className="mt-3 break-all text-center text-xs text-slate-600">{checkInUrl}</p>
+              </>
+            ) : (
+              <p role="alert" className="mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                The QR code needs the public site address. Set NEXT_PUBLIC_PUBLIC_SITE_URL on this project and redeploy.
+              </p>
+            )}
             <p className="mt-2 text-xs leading-5 text-slate-600">
               Check-in opens one hour before the event starts and closes when it ends. The portal must be reachable from attendees’ phones.
             </p>

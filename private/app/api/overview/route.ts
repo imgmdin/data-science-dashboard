@@ -34,6 +34,7 @@ export async function GET() {
       })),
     });
   } catch (e) {
-    return Response.json({ error: (e as Error).message }, { status: 500 });
+    console.error(e);
+    return Response.json({ error: "Something went wrong. Please try again." }, { status: 500 });
   }
 }
